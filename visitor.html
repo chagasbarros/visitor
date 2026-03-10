@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Padrão Visitor — Auditor Fiscal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1f2e;
+    --border: #252a3a;
+    --accent: #f5a623;
+    --accent2: #4ecdc4;
+    --accent3: #ff6b6b;
+    --text: #e8eaf0;
+    --text-muted: #7a8099;
+    --green: #5dde8a;
+    --purple: #a78bfa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #0d0f14 0%, #111827 50%, #0d1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 40px 50px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -100px; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 300px;
+    background: radial-gradient(ellipse, rgba(245,166,35,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .badge {
+    display: inline-block;
+    background: rgba(245,166,35,0.1);
+    border: 1px solid rgba(245,166,35,0.3);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .hero-sub {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  /* LAYOUT */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  section { padding: 60px 0; border-bottom: 1px solid var(--border); }
+  section:last-child { border-bottom: none; }
+
+  h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .step-num {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: #000;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .section-intro {
+    color: var(--text-muted);
+    margin-bottom: 28px;
+    font-size: 0.95rem;
+    padding-left: 48px;
+  }
+
+  /* ANALOGY CARD */
+  .analogy-box {
+    background: linear-gradient(135deg, rgba(245,166,35,0.07), rgba(245,166,35,0.02));
+    border: 1px solid rgba(245,166,35,0.25);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    position: relative;
+  }
+
+  .analogy-box::before {
+    content: '💡';
+    position: absolute;
+    top: -14px; left: 24px;
+    font-size: 1.4rem;
+    background: var(--bg);
+    padding: 0 8px;
+  }
+
+  .analogy-box h3 {
+    font-family: 'Syne', sans-serif;
+    color: var(--accent);
+    font-size: 1rem;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ACTORS GRID */
+  .actors {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  .actor-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    transition: transform 0.2s, border-color 0.2s;
+    cursor: default;
+  }
+
+  .actor-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent2);
+  }
+
+  .actor-icon { font-size: 2rem; margin-bottom: 10px; }
+
+  .actor-card h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--accent2);
+  }
+
+  .actor-card .actor-java {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--purple);
+    margin-bottom: 8px;
+  }
+
+  .actor-card p { font-size: 0.85rem; color: var(--text-muted); }
+
+  /* CODE BLOCK */
+  .code-wrap {
+    background: #0a0c10;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin: 20px 0;
+    position: relative;
+  }
+
+  .code-header {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .code-dots { display: flex; gap: 7px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+
+  .code-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  pre {
+    padding: 24px 28px;
+    overflow-x: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.85;
+    tab-size: 4;
+  }
+
+  /* Syntax highlight */
+  .kw  { color: #ff79c6; }
+  .cls { color: #8be9fd; }
+  .fn  { color: #50fa7b; }
+  .str { color: #f1fa8c; }
+  .num { color: var(--accent); }
+  .cmt { color: #6272a4; font-style: italic; }
+  .ann { color: #bd93f9; }
+  .var { color: #ffb86c; }
+
+  /* STEP FLOW */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 24px 0;
+    position: relative;
+  }
+
+  .flow::before {
+    content: '';
+    position: absolute;
+    left: 22px;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--accent2), var(--green));
+  }
+
+  .flow-step {
+    display: flex;
+    gap: 20px;
+    padding: 16px 0;
+    position: relative;
+  }
+
+  .flow-dot {
+    width: 46px; height: 46px;
+    background: var(--surface2);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: var(--accent);
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .flow-step:nth-child(2) .flow-dot { border-color: var(--accent2); color: var(--accent2); }
+  .flow-step:nth-child(3) .flow-dot { border-color: var(--green); color: var(--green); }
+  .flow-step:nth-child(4) .flow-dot { border-color: var(--purple); color: var(--purple); }
+
+  .flow-content h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .flow-content p { font-size: 0.88rem; color: var(--text-muted); }
+
+  /* OUTPUT DEMO */
+  .demo-box {
+    background: #060810;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 2;
+    margin: 20px 0;
+  }
+
+  .demo-box .prompt { color: var(--green); }
+  .demo-box .out { color: var(--text); }
+  .demo-box .sep { color: var(--border); user-select: none; }
+
+  /* SUMMARY TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    margin: 20px 0;
+  }
+
+  th {
+    background: var(--surface2);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(37,42,58,0.5);
+    vertical-align: top;
+  }
+
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .tag-green { background: rgba(93,222,138,0.12); color: var(--green); }
+  .tag-red   { background: rgba(255,107,107,0.12); color: var(--accent3); }
+
+  /* CALLOUT */
+  .callout {
+    background: rgba(78,205,196,0.06);
+    border: 1px solid rgba(78,205,196,0.2);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 24px 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+
+  .callout strong { color: var(--accent2); }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 600px) {
+    .hero { padding: 40px 20px 36px; }
+    section { padding: 40px 0; }
+    .analogy-box { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">Padrões de Projeto · 1º Semestre</div>
+  <h1>Padrão <span>Visitor</span></h1>
+  <p class="hero-sub">Entendendo o padrão comportamental com a analogia do <strong>Auditor Fiscal</strong> — passo a passo, do zero.</p>
+</div>
+
+<div class="container">
+
+  <!-- SEÇÃO 1 — ANALOGIA -->
+  <section>
+    <h2><span class="step-num">1</span> Antes do código: a analogia</h2>
+    <p class="section-intro">Sempre entenda o problema antes de programar.</p>
+
+    <div class="analogy-box">
+      <h3>🏢 Imagine o seguinte cenário</h3>
+      <p>Uma cidade tem três tipos de empresa: <strong>Restaurante</strong>, <strong>Loja</strong> e <strong>Fábrica</strong>. A Receita Federal precisa enviar um <strong>Auditor Fiscal</strong> para cada uma delas para verificar impostos.</p>
+      <br>
+      <p>Cada empresa <em>sabe receber</em> o auditor (tem uma porta de entrada). Mas é o auditor quem decide <em>o que fazer</em> dentro de cada tipo de empresa — calcular o ISS em restaurantes, o ICMS em lojas, o IPI em fábricas.</p>
+      <br>
+      <p>Amanhã, a Receita pode criar um novo auditor (p. ex., de Vigilância Sanitária) sem precisar mexer em nenhuma empresa. <strong>Esse é o padrão Visitor.</strong></p>
+    </div>
+
+    <div class="actors">
+      <div class="actor-card">
+        <div class="actor-icon">🏢</div>
+        <h4>Elemento</h4>
+        <div class="actor-java">interface Empresa</div>
+        <p>Objeto que será visitado. Tem um método <code>receberAuditor()</code>.</p>
+      </div>
+      <div class="actor-card">
+        <div class="actor-icon">🍕</div>
+        <h4>Elemento Concreto</h4>
+        <div class="actor-java">class Restaurante</div>
+        <p>Implementa <code>receberAuditor()</code> chamando <code>auditor.visitar(this)</code>.</p>
+      </div>
+      <div class="actor-card">
+        <div class="actor-icon">🕵️</div>
+        <h4>Visitor</h4>
+        <div class="actor-java">interface Auditor</div>
+        <p>Declara um método <code>visitar()</code> para cada tipo de empresa.</p>
+      </div>
+      <div class="actor-card">
+        <div class="actor-icon">📋</div>
+        <h4>Visitor Concreto</h4>
+        <div class="actor-java">class AuditorFiscal</div>
+        <p>Implementa a lógica real de fiscalização para cada empresa.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEÇÃO 2 — INTERFACES -->
+  <section>
+    <h2><span class="step-num">2</span> Criando as interfaces</h2>
+    <p class="section-intro">Primeiro definimos os "contratos" — o que cada parte deve ser capaz de fazer.</p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots">
+          <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        </div>
+        <span class="code-label">Empresa.java &amp; Auditor.java</span>
+      </div>
+      <pre><span class="cmt">// ─────────────────────────────────────────────────
+// PASSO 1: Interface do ELEMENTO (as empresas)
+// Toda empresa deve ter uma "porta de entrada" 
+// para receber qualquer auditor.
+// ─────────────────────────────────────────────────</span>
+
+<span class="kw">public interface</span> <span class="cls">Empresa</span> {
+    <span class="cmt">// Cada empresa deve saber "receber" um auditor</span>
+    <span class="kw">void</span> <span class="fn">receberAuditor</span>(<span class="cls">Auditor</span> auditor);
+}
+
+
+<span class="cmt">// ─────────────────────────────────────────────────
+// PASSO 2: Interface do VISITOR (o auditor)
+// O auditor declara que sabe visitar cada tipo 
+// de empresa que existe.
+// ─────────────────────────────────────────────────</span>
+
+<span class="kw">public interface</span> <span class="cls">Auditor</span> {
+    <span class="kw">void</span> <span class="fn">visitar</span>(<span class="cls">Restaurante</span> restaurante); <span class="cmt">// sabe visitar restaurante</span>
+    <span class="kw">void</span> <span class="fn">visitar</span>(<span class="cls">Loja</span> loja);                 <span class="cmt">// sabe visitar loja</span>
+    <span class="kw">void</span> <span class="fn">visitar</span>(<span class="cls">Fabrica</span> fabrica);           <span class="cmt">// sabe visitar fábrica</span>
+}</pre>
+    </div>
+
+    <div class="callout">
+      <strong>💬 Por que duas interfaces?</strong> A <code>Empresa</code> representa a estrutura estável (as empresas não mudam). O <code>Auditor</code> representa as operações que podem ser criadas e multiplicadas no futuro, sem tocar nas empresas.
+    </div>
+  </section>
+
+  <!-- SEÇÃO 3 — ELEMENTOS CONCRETOS -->
+  <section>
+    <h2><span class="step-num">3</span> Implementando as empresas</h2>
+    <p class="section-intro">Cada empresa implementa o método <code>receberAuditor()</code>. Note que todas fazem a mesma coisa: chamam <code>auditor.visitar(this)</code>.</p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots">
+          <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        </div>
+        <span class="code-label">Restaurante.java · Loja.java · Fabrica.java</span>
+      </div>
+      <pre><span class="cmt">// ──────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="cls">Restaurante</span> <span class="kw">implements</span> <span class="cls">Empresa</span> {
+
+    <span class="kw">private</span> <span class="cls">String</span> <span class="var">nome</span>;
+    <span class="kw">private double</span> <span class="var">faturamentoMensal</span>;
+
+    <span class="kw">public</span> <span class="fn">Restaurante</span>(<span class="cls">String</span> <span class="var">nome</span>, <span class="kw">double</span> <span class="var">faturamentoMensal</span>) {
+        <span class="kw">this</span>.<span class="var">nome</span> = <span class="var">nome</span>;
+        <span class="kw">this</span>.<span class="var">faturamentoMensal</span> = <span class="var">faturamentoMensal</span>;
+    }
+
+    <span class="kw">public</span> <span class="cls">String</span>  <span class="fn">getNome</span>()              { <span class="kw">return</span> <span class="var">nome</span>; }
+    <span class="kw">public double</span> <span class="fn">getFaturamentoMensal</span>() { <span class="kw">return</span> <span class="var">faturamentoMensal</span>; }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">receberAuditor</span>(<span class="cls">Auditor</span> <span class="var">auditor</span>) {
+        <span class="cmt">// "Olá auditor, eu sou um Restaurante, pode entrar!"</span>
+        <span class="cmt">// O Java escolhe automaticamente o método visitar(Restaurante)</span>
+        <span class="var">auditor</span>.<span class="fn">visitar</span>(<span class="kw">this</span>);
+    }
+}
+
+<span class="cmt">// ──────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="cls">Loja</span> <span class="kw">implements</span> <span class="cls">Empresa</span> {
+
+    <span class="kw">private</span> <span class="cls">String</span> <span class="var">nome</span>;
+    <span class="kw">private double</span> <span class="var">valorEstoque</span>;
+
+    <span class="kw">public</span> <span class="fn">Loja</span>(<span class="cls">String</span> <span class="var">nome</span>, <span class="kw">double</span> <span class="var">valorEstoque</span>) {
+        <span class="kw">this</span>.<span class="var">nome</span> = <span class="var">nome</span>;
+        <span class="kw">this</span>.<span class="var">valorEstoque</span> = <span class="var">valorEstoque</span>;
+    }
+
+    <span class="kw">public</span> <span class="cls">String</span>  <span class="fn">getNome</span>()         { <span class="kw">return</span> <span class="var">nome</span>; }
+    <span class="kw">public double</span> <span class="fn">getValorEstoque</span>() { <span class="kw">return</span> <span class="var">valorEstoque</span>; }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">receberAuditor</span>(<span class="cls">Auditor</span> <span class="var">auditor</span>) {
+        <span class="var">auditor</span>.<span class="fn">visitar</span>(<span class="kw">this</span>); <span class="cmt">// chama visitar(Loja)</span>
+    }
+}
+
+<span class="cmt">// ──────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="cls">Fabrica</span> <span class="kw">implements</span> <span class="cls">Empresa</span> {
+
+    <span class="kw">private</span> <span class="cls">String</span> <span class="var">nome</span>;
+    <span class="kw">private int</span>    <span class="var">qtdFuncionarios</span>;
+    <span class="kw">private double</span> <span class="var">valorProducaoMensal</span>;
+
+    <span class="kw">public</span> <span class="fn">Fabrica</span>(<span class="cls">String</span> <span class="var">nome</span>, <span class="kw">int</span> <span class="var">qtdFuncionarios</span>, <span class="kw">double</span> <span class="var">valorProducaoMensal</span>) {
+        <span class="kw">this</span>.<span class="var">nome</span> = <span class="var">nome</span>;
+        <span class="kw">this</span>.<span class="var">qtdFuncionarios</span> = <span class="var">qtdFuncionarios</span>;
+        <span class="kw">this</span>.<span class="var">valorProducaoMensal</span> = <span class="var">valorProducaoMensal</span>;
+    }
+
+    <span class="kw">public</span> <span class="cls">String</span>  <span class="fn">getNome</span>()               { <span class="kw">return</span> <span class="var">nome</span>; }
+    <span class="kw">public int</span>     <span class="fn">getQtdFuncionarios</span>()    { <span class="kw">return</span> <span class="var">qtdFuncionarios</span>; }
+    <span class="kw">public double</span>  <span class="fn">getValorProducaoMensal</span>(){ <span class="kw">return</span> <span class="var">valorProducaoMensal</span>; }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">receberAuditor</span>(<span class="cls">Auditor</span> <span class="var">auditor</span>) {
+        <span class="var">auditor</span>.<span class="fn">visitar</span>(<span class="kw">this</span>); <span class="cmt">// chama visitar(Fabrica)</span>
+    }
+}</pre>
+    </div>
+  </section>
+
+  <!-- SEÇÃO 4 — VISITOR CONCRETO -->
+  <section>
+    <h2><span class="step-num">4</span> Criando o Auditor Fiscal</h2>
+    <p class="section-intro">Aqui fica toda a lógica de negócio. O auditor sabe exatamente o que fazer em cada tipo de empresa.</p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots">
+          <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        </div>
+        <span class="code-label">AuditorFiscal.java</span>
+      </div>
+      <pre><span class="kw">public class</span> <span class="cls">AuditorFiscal</span> <span class="kw">implements</span> <span class="cls">Auditor</span> {
+
+    <span class="cmt">// ── Restaurantes pagam ISS: 5% sobre faturamento ──</span>
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">visitar</span>(<span class="cls">Restaurante</span> <span class="var">r</span>) {
+        <span class="kw">double</span> <span class="var">iss</span> = <span class="var">r</span>.<span class="fn">getFaturamentoMensal</span>() * <span class="num">0.05</span>;
+        <span class="cls">System</span>.out.<span class="fn">println</span>(
+            <span class="str">"🍕 Restaurante: "</span> + <span class="var">r</span>.<span class="fn">getNome</span>() +
+            <span class="str">"\n   ISS devido (5%): R$ "</span> + <span class="var">iss</span>
+        );
+    }
+
+    <span class="cmt">// ── Lojas pagam ICMS: 12% sobre o valor do estoque ──</span>
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">visitar</span>(<span class="cls">Loja</span> <span class="var">l</span>) {
+        <span class="kw">double</span> <span class="var">icms</span> = <span class="var">l</span>.<span class="fn">getValorEstoque</span>() * <span class="num">0.12</span>;
+        <span class="cls">System</span>.out.<span class="fn">println</span>(
+            <span class="str">"🛒 Loja: "</span> + <span class="var">l</span>.<span class="fn">getNome</span>() +
+            <span class="str">"\n   ICMS devido (12%): R$ "</span> + <span class="var">icms</span>
+        );
+    }
+
+    <span class="cmt">// ── Fábricas pagam IPI: 10% sobre produção + R$200/funcionário ──</span>
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">visitar</span>(<span class="cls">Fabrica</span> <span class="var">f</span>) {
+        <span class="kw">double</span> <span class="var">ipi</span>  = <span class="var">f</span>.<span class="fn">getValorProducaoMensal</span>() * <span class="num">0.10</span>;
+        <span class="kw">double</span> <span class="var">inss</span> = <span class="var">f</span>.<span class="fn">getQtdFuncionarios</span>() * <span class="num">200.0</span>;
+        <span class="cls">System</span>.out.<span class="fn">println</span>(
+            <span class="str">"🏭 Fábrica: "</span> + <span class="var">f</span>.<span class="fn">getNome</span>() +
+            <span class="str">"\n   IPI  devido (10%): R$ "</span> + <span class="var">ipi</span> +
+            <span class="str">"\n   INSS devido:        R$ "</span> + <span class="var">inss</span>
+        );
+    }
+}</pre>
+    </div>
+
+    <div class="callout">
+      <strong>🔑 Ponto-chave:</strong> toda a lógica de impostos fica <em>aqui</em>, e não espalhada dentro de cada empresa. As classes <code>Restaurante</code>, <code>Loja</code> e <code>Fabrica</code> não sabem nada sobre cálculo de impostos — só sabem abrir a porta.
+    </div>
+  </section>
+
+  <!-- SEÇÃO 5 — MAIN -->
+  <section>
+    <h2><span class="step-num">5</span> Colocando tudo para rodar</h2>
+    <p class="section-intro">O método <code>main</code> é onde criamos as empresas, o auditor, e mandamos ele fazer a ronda.</p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots">
+          <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        </div>
+        <span class="code-label">Main.java</span>
+      </div>
+      <pre><span class="kw">import</span> java.util.<span class="cls">List</span>;
+
+<span class="kw">public class</span> <span class="cls">Main</span> {
+    <span class="kw">public static void</span> <span class="fn">main</span>(<span class="cls">String</span>[] <span class="var">args</span>) {
+
+        <span class="cmt">// 1. Criamos as empresas da cidade</span>
+        <span class="cls">List</span>&lt;<span class="cls">Empresa</span>&gt; <span class="var">empresas</span> = <span class="cls">List</span>.<span class="fn">of</span>(
+            <span class="kw">new</span> <span class="cls">Restaurante</span>(<span class="str">"Sabor da Terra"</span>,  <span class="num">50_000.0</span>),
+            <span class="kw">new</span> <span class="cls">Loja</span>       (<span class="str">"Moda &amp; Estilo"</span>,   <span class="num">80_000.0</span>),
+            <span class="kw">new</span> <span class="cls">Fabrica</span>    (<span class="str">"AçoForte Ltda"</span>, <span class="num">30</span>, <span class="num">200_000.0</span>)
+        );
+
+        <span class="cmt">// 2. Criamos o auditor fiscal</span>
+        <span class="cls">Auditor</span> <span class="var">auditorFiscal</span> = <span class="kw">new</span> <span class="cls">AuditorFiscal</span>();
+
+        <span class="cmt">// 3. Mandamos o auditor visitar cada empresa</span>
+        <span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"=== FISCALIZAÇÃO DA RECEITA FEDERAL ==="</span>);
+        <span class="kw">for</span> (<span class="cls">Empresa</span> <span class="var">e</span> : <span class="var">empresas</span>) {
+            <span class="var">e</span>.<span class="fn">receberAuditor</span>(<span class="var">auditorFiscal</span>); <span class="cmt">// cada empresa "abre a porta"</span>
+            <span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"───────────────────────────────────────"</span>);
+        }
+    }
+}</pre>
+    </div>
+
+    <p style="color: var(--text-muted); font-size:0.9rem; margin-bottom: 16px;">Saída esperada no console:</p>
+    <div class="demo-box">
+      <span class="prompt">$</span> <span class="out">javac *.java &amp;&amp; java Main</span><br>
+      <span class="sep">───────────────────────────────────────</span><br>
+      <span class="out">=== FISCALIZAÇÃO DA RECEITA FEDERAL ===</span><br>
+      <span class="out">🍕 Restaurante: Sabor da Terra</span><br>
+      <span class="out">&nbsp;&nbsp;&nbsp;ISS devido (5%): R$ 2500.0</span><br>
+      <span class="sep">───────────────────────────────────────</span><br>
+      <span class="out">🛒 Loja: Moda &amp; Estilo</span><br>
+      <span class="out">&nbsp;&nbsp;&nbsp;ICMS devido (12%): R$ 9600.0</span><br>
+      <span class="sep">───────────────────────────────────────</span><br>
+      <span class="out">🏭 Fábrica: AçoForte Ltda</span><br>
+      <span class="out">&nbsp;&nbsp;&nbsp;IPI  devido (10%): R$ 20000.0</span><br>
+      <span class="out">&nbsp;&nbsp;&nbsp;INSS devido:        R$ 6000.0</span><br>
+      <span class="sep">───────────────────────────────────────</span>
+    </div>
+  </section>
+
+  <!-- SEÇÃO 6 — COMO FUNCIONA O DOUBLE DISPATCH -->
+  <section>
+    <h2><span class="step-num">6</span> O que acontece por baixo dos panos?</h2>
+    <p class="section-intro">Esse "caminho secreto" que a chamada percorre tem nome: <strong>Double Dispatch</strong>.</p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-dot">1</div>
+        <div class="flow-content">
+          <h4>O loop chama <code>e.receberAuditor(auditorFiscal)</code></h4>
+          <p>Neste ponto, <code>e</code> pode ser qualquer tipo de empresa. O Java sabe em tempo de execução qual classe concreta está guardada ali.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-dot">2</div>
+        <div class="flow-content">
+          <h4>A empresa chama <code>auditor.visitar(this)</code></h4>
+          <p>O <code>this</code> aqui é o tipo concreto, por exemplo <code>Restaurante</code>. O Java agora sabe o tipo exato do objeto.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-dot">3</div>
+        <div class="flow-content">
+          <h4>O Java escolhe o método <code>visitar(Restaurante)</code></h4>
+          <p>Como o tipo é conhecido, o método certo do <code>AuditorFiscal</code> é chamado automaticamente. Isso é o <em>double dispatch</em>: dois despachos dinâmicos em cadeia.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-dot">4</div>
+        <div class="flow-content">
+          <h4>A lógica do auditor é executada para aquele tipo</h4>
+          <p>O cálculo de ISS roda para restaurante, ICMS para loja, IPI/INSS para fábrica — sem nenhum <code>if/else</code> ou <code>instanceof</code>!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEÇÃO 7 — EXTENSÃO -->
+  <section>
+    <h2><span class="step-num">7</span> Adicionando um novo auditor sem mexer em nada</h2>
+    <p class="section-intro">Essa é a grande vantagem. Quer um Auditor de Vigilância Sanitária? Crie só uma nova classe.</p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots">
+          <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        </div>
+        <span class="code-label">AuditorSanitario.java — NOVO, sem alterar nada</span>
+      </div>
+      <pre><span class="kw">public class</span> <span class="cls">AuditorSanitario</span> <span class="kw">implements</span> <span class="cls">Auditor</span> {
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">visitar</span>(<span class="cls">Restaurante</span> <span class="var">r</span>) {
+        <span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"🔬 Verificando cozinha de: "</span> + <span class="var">r</span>.<span class="fn">getNome</span>());
+        <span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"   → Inspeção de alimentos obrigatória!"</span>);
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">visitar</span>(<span class="cls">Loja</span> <span class="var">l</span>) {
+        <span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"🔬 Verificando produtos de: "</span> + <span class="var">l</span>.<span class="fn">getNome</span>());
+        <span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"   → Checar prazo de validade."</span>);
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">visitar</span>(<span class="cls">Fabrica</span> <span class="var">f</span>) {
+        <span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"🔬 Vistoria de segurança em: "</span> + <span class="var">f</span>.<span class="fn">getNome</span>());
+        <span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"   → EPI e saídas de emergência."</span>);
+    }
+}
+
+<span class="cmt">// No main, basta trocar o auditor:</span>
+<span class="cls">Auditor</span> <span class="var">sanitario</span> = <span class="kw">new</span> <span class="cls">AuditorSanitario</span>();
+<span class="var">empresas</span>.<span class="fn">forEach</span>(<span class="var">e</span> -&gt; <span class="var">e</span>.<span class="fn">receberAuditor</span>(<span class="var">sanitario</span>));
+<span class="cmt">// As empresas não foram modificadas em nenhum momento!</span></pre>
+    </div>
+  </section>
+
+  <!-- SEÇÃO 8 — RESUMO -->
+  <section>
+    <h2><span class="step-num">8</span> Resumo: quando usar (e quando não usar)</h2>
+    <p class="section-intro">Padrões de projeto existem para resolver problemas. Conheça o contexto certo de aplicação.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Situação</th>
+          <th>Visitor?</th>
+          <th>Motivo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Precisa de várias operações sobre uma hierarquia estável</td>
+          <td><span class="tag tag-green">✅ Sim</span></td>
+          <td>É exatamente o ponto forte do padrão</td>
+        </tr>
+        <tr>
+          <td>Quer adicionar operações sem modificar as classes existentes</td>
+          <td><span class="tag tag-green">✅ Sim</span></td>
+          <td>Segue o princípio Open/Closed</td>
+        </tr>
+        <tr>
+          <td>A hierarquia de tipos muda com frequência</td>
+          <td><span class="tag tag-red">❌ Não</span></td>
+          <td>Cada novo tipo exige atualizar todos os visitors</td>
+        </tr>
+        <tr>
+          <td>Você só tem uma operação simples</td>
+          <td><span class="tag tag-red">❌ Não</span></td>
+          <td>Complexidade desnecessária; use polimorfismo simples</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout" style="margin-top: 28px;">
+      <strong>📦 Estrutura de arquivos do projeto:</strong><br><br>
+      <code style="font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--text-muted);">
+        visitor/<br>
+        &nbsp;&nbsp;├── Empresa.java &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← interface elemento<br>
+        &nbsp;&nbsp;├── Auditor.java &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← interface visitor<br>
+        &nbsp;&nbsp;├── Restaurante.java &nbsp;&nbsp;&nbsp;← elemento concreto<br>
+        &nbsp;&nbsp;├── Loja.java &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← elemento concreto<br>
+        &nbsp;&nbsp;├── Fabrica.java &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← elemento concreto<br>
+        &nbsp;&nbsp;├── AuditorFiscal.java &nbsp;← visitor concreto<br>
+        &nbsp;&nbsp;└── Main.java &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← ponto de entrada
+      </code>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Padrão Visitor · Material didático para ADS 1º Semestre · Gerado com Claude
+</footer>
+
+</body>
+</html>
